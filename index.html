@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>4 COLORS MULTIPLAYER</title>
+    <link rel="stylesheet" href="css/reset.css" type="text/css" />
+    <link rel="stylesheet" href="css/main.css" type="text/css" />
+    <link
+      rel="stylesheet"
+      href="css/ctl-multiplayer-icons.css"
+      type="text/css"
+    />
+    <link rel="stylesheet" href="css/animation.css" type="text/css" />
+    <link rel="stylesheet" href="css/ctl-multiplayer.css" type="text/css" />
+    <link rel="stylesheet" href="css/orientation_utils.css" type="text/css" />
+    <link rel="stylesheet" href="css/ios_fullscreen.css" type="text/css" />
+    <link rel="shortcut icon" type="image/x-icon" href="./favicon.ico" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui"
+    />
+    <meta name="msapplication-tap-highlight" content="no" />
+
+    <script type="text/javascript" src="js/lib/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="js/lib/createjs.min.js"></script>
+    <script type="text/javascript" src="js/lib/platform.js"></script>
+    <script type="text/javascript" src="js/lib/ios_fullscreen.js"></script>
+    <script type="text/javascript" src="js/lib/screenfull.js"></script>
+    <script type="text/javascript" src="js/lib/howler.min.js"></script>
+    <script type="text/javascript" src="js/lib/ctl_utils.js"></script>
+    <script type="text/javascript" src="js/lib/sprite_lib.js"></script>
+    <script type="text/javascript" src="js/lib/CTextButton.js"></script>
+    <script type="text/javascript" src="js/lib/CToggle.js"></script>
+    <script type="text/javascript" src="js/lib/CGfxButton.js"></script>
+    <script type="text/javascript" src="js/lib/CCTLText.js"></script>
+    <script type="text/javascript" src="js/lib/sprintf.js"></script>
+
+    <script type="text/javascript" src="js/settings.js"></script>
+    <script type="text/javascript" src="js/CLang.js"></script>
+    <script type="text/javascript" src="js/CPreloader.js"></script>
+    <script type="text/javascript" src="js/CMain.js"></script>
+    <script type="text/javascript" src="js/CPanelTutorial.js"></script>
+    <script type="text/javascript" src="js/CTurnManager.js"></script>
+    <script type="text/javascript" src="js/CAnimation.js"></script>
+    <script type="text/javascript" src="js/CMenu.js"></script>
+    <script type="text/javascript" src="js/CSelectPlayers.js"></script>
+    <script type="text/javascript" src="js/CCard.js"></script>
+    <script type="text/javascript" src="js/CDeckDisplayer.js"></script>
+    <script type="text/javascript" src="js/CHandDisplayer.js"></script>
+    <script type="text/javascript" src="js/CGameBase.js"></script>
+    <script type="text/javascript" src="js/CGameSingle.js"></script>
+    <script type="text/javascript" src="js/CInterface.js"></script>
+    <script type="text/javascript" src="js/CCreditsPanel.js"></script>
+    <script type="text/javascript" src="js/CSelectColorPanel.js"></script>
+    <script type="text/javascript" src="js/CAreYouSurePanel.js"></script>
+    <script type="text/javascript" src="js/CAIManager.js"></script>
+    <script type="text/javascript" src="js/CUnoController.js"></script>
+    <script type="text/javascript" src="js/CSummaryPanel.js"></script>
+    <script type="text/javascript" src="js/CPlayerInfo.js"></script>
+    <script type="text/javascript" src="js/CInfoLabel.js"></script>
+    <script type="text/javascript" src="js/CMsgBox.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+      .waiting-message,
+      .game-finished-message,
+      .game-disconnected {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: #fff;
+        background: rgb(0, 0, 0);
+        padding: 20px;
+        border-radius: 10px;
+        display: none; /* Hidden by default */
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body ondragstart="return false;" ondrop="return false;">
+    <div class="waiting-message" id="waitingMessage">
+      Waiting for all players to connect...
+    </div>
+
+    <div class="game-finished-message" id="gameFinishedMessage">
+      Game Finished...
+    </div>
+
+    <div class="game-disconnected" id="gameDisconnectMessage">
+      Game finished. Only one player left in the game.
+    </div>
+
+    <div
+      style="
+        position: fixed;
+        background-color: transparent;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        height: 100%;
+      "
+    ></div>
+    <script>
+      $(document).ready(function () {
+        function getQueryParams() {
+          const params = new URLSearchParams(window.location.search);
+          return {
+            roomID: params.get("roomID"),
+            playerID: params.get("playerID"),
+            playerName: params.get("playerName"),
+            numOfPlayers: parseInt(params.get("numOfPlayers")) || null,
+            isHost: params.get("isHost") === "true",
+          };
+        }
+
+        const { roomID, playerID, playerName, numOfPlayers, isHost } =
+          getQueryParams();
+        ROOM_ID = roomID;
+        PLAYER_ID = playerID;
+        PLAYER_NAME = playerName;
+        NUM_OF_PLAYERS = numOfPlayers;
+        IS_HOST = isHost;
+        window.socket = io();
+
+        $("#waitingMessage").show();
+
+        socket.on("connect", () => {
+          // console.log("Connected to server");
+          socket.emit("joinRoom", {
+            roomID,
+            playerID,
+            playerName,
+            numOfPlayers,
+            isHost,
+          });
+        });
+
+        socket.on("gamefinished", ({ playerID }) => {
+          $("#gameDisconnectMessage").hide();
+          $("#waitingMessage").hide();
+          $("#gameFinishedMessage").show();
+          window.parent.postMessage({ type: "win_uno", winner: playerID }, "*");
+        });
+
+        socket.on("disconnectAllPlayers", () => {
+          $("#waitingMessage").hide();
+          $("#gameFinishedMessage").hide();
+          $("#gameDisconnectMessage").show();
+        });
+
+        socket.on("waiting", ({ playersCount, numOfPlayers }) => {
+          // console.log(
+          //   `Waiting for players... (${playersCount}/${numOfPlayers})`
+          // );
+        });
+
+        socket.on("startGame", async ({ players, deck }) => {
+          await getNames();
+          startGame(players.length, deck);
+        });
+
+        socket.on("singlePlayerDisconnected", (data) => {
+          const params = new URLSearchParams(window.location.search);
+          const myPlayerID = params.get("playerID");
+          const info = data.room.players;
+          const updatedPlayers = info.map((eachPlayer, index) => {
+            return { ...eachPlayer, position: index };
+          });
+          while (
+            updatedPlayers.length > 0 &&
+            updatedPlayers[0].playerID !== myPlayerID
+          ) {
+            updatedPlayers.push(updatedPlayers.shift());
+          }
+          GAME_INFO = updatedPlayers;
+        });
+
+        socket.on("gameStarted", (data) => {
+          alert(data.message);
+        });
+
+        async function getNames() {
+          const params = new URLSearchParams(window.location.search);
+          const roomID = params.get("roomID");
+          const myPlayerID = params.get("playerID");
+          try {
+            await axios.get(`/api/room/${roomID}/players`).then((response) => {
+              // console.log(response.data);
+              const info = response.data.players;
+              const player = response.data.players;
+              const updatedPlayers = info.map((eachPlayer, index) => {
+                return { ...eachPlayer, position: index };
+              });
+              while (
+                updatedPlayers.length > 0 &&
+                updatedPlayers[0].playerID !== myPlayerID
+              ) {
+                updatedPlayers.push(updatedPlayers.shift());
+              }
+              GAME_INFO = updatedPlayers;
+              if (updatedPlayers.length == 2) {
+                TEXT_PLAYER_1 = updatedPlayers[0].playerName;
+                TEXT_PLAYER_2 = updatedPlayers[1].playerName;
+              } else if (updatedPlayers.length == 3) {
+                TEXT_PLAYER_1 = updatedPlayers[0].playerName;
+                TEXT_PLAYER_2 = updatedPlayers[1].playerName;
+                TEXT_PLAYER_3 = updatedPlayers[2].playerName;
+              } else if (updatedPlayers.length == 4) {
+                TEXT_PLAYER_1 = updatedPlayers[0].playerName;
+                TEXT_PLAYER_2 = updatedPlayers[1].playerName;
+                TEXT_PLAYER_3 = updatedPlayers[2].playerName;
+                TEXT_PLAYER_4 = updatedPlayers[3].playerName;
+              }
+              if (response.data.hostID) {
+                updatedPlayers.forEach((element, index) => {
+                  if (element.playerID == response.data.hostID) {
+                    STARTINGTURN = index;
+                  }
+                });
+              }
+            });
+          } catch (error) {
+            console.error("Error fetching data:", error);
+          }
+        }
+
+        function startGame(players, deck) {
+          $("#waitingMessage").hide();
+          $("#gameFinishedMessage").hide();
+          $("#gameDisconnectMessage").hide();
+          // console.log(players);
+          NUM_PLAYERS = players;
+          var oMain = new CMain({
+            starting_num_cards: 7,
+            fullscreen: true,
+            check_orientation: true,
+            audio_enable_on_startup: false,
+          });
+
+          $(oMain).on("select_players", function (evt, iNumPlayers) {
+            //...ADD YOUR CODE HERE EVENTUALLY
+          });
+
+          $(oMain).on("start_session", function (evt) {
+            if (getParamValue("ctl-arcade") === "true") {
+              parent.__ctlArcadeStartSession();
+            }
+            //...ADD YOUR CODE HERE EVENTUALLY
+          });
+
+          $(oMain).on("end_session", function (evt) {
+            if (getParamValue("ctl-arcade") === "true") {
+              parent.__ctlArcadeEndSession();
+            }
+            //...ADD YOUR CODE HERE EVENTUALLY
+          });
+
+          $(oMain).on("save_score", function (evt, iScore, szMode) {
+            if (getParamValue("ctl-arcade") === "true") {
+              parent.__ctlArcadeSaveScore({ score: iScore, mode: szMode });
+            }
+            //...ADD YOUR CODE HERE EVENTUALLY
+          });
+
+          $(oMain).on("show_interlevel_ad", function (evt) {
+            if (getParamValue("ctl-arcade") === "true") {
+              parent.__ctlArcadeShowInterlevelAD();
+            }
+            //...ADD YOUR CODE HERE EVENTUALLY
+          });
+
+          $(oMain).on("share_event", function (evt, iScore) {
+            if (getParamValue("ctl-arcade") === "true") {
+              parent.__ctlArcadeShareEvent({
+                img: TEXT_SHARE_IMAGE,
+                title: TEXT_SHARE_TITLE,
+                msg: TEXT_SHARE_MSG1 + iScore + TEXT_SHARE_MSG2,
+                msg_share: TEXT_SHARE_SHARE1 + iScore + TEXT_SHARE_SHARE1,
+              });
+            }
+            //...ADD YOUR CODE HERE EVENTUALLY
+          });
+
+          if (isIOS()) {
+            setTimeout(function () {
+              sizeHandler();
+            }, 200);
+          } else {
+            sizeHandler();
+          }
+        }
+      });
+    </script>
+    <div class="check-fonts">
+      <p class="check-font-1">RoundedMplus1c</p>
+    </div>
+
+    <canvas id="canvas" class="ani_hack" width="1920" height="1080"> </canvas>
+    <div data-orientation="landscape" class="orientation-msg-container">
+      <p class="orientation-msg-text">Please rotate your device</p>
+    </div>
+    <div
+      id="block_game"
+      style="
+        position: fixed;
+        background-color: transparent;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        height: 100%;
+        display: none;
+      "
+    ></div>
+  </body>
+</html>

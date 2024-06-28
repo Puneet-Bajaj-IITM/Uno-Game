@@ -1,0 +1,9 @@
+
+.ctl-multiplayer-icons-lock { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe800;&nbsp;'); }
+.ctl-multiplayer-icons-lock-open { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe801;&nbsp;'); }
+.ctl-multiplayer-icons-block { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe802;&nbsp;'); }
+.ctl-multiplayer-icons-arrows-cw { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe803;&nbsp;'); }
+.ctl-multiplayer-icons-login { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe804;&nbsp;'); }
+.ctl-multiplayer-icons-spin5 { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe838;&nbsp;'); }
+.ctl-multiplayer-icons-help { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf128;&nbsp;'); }
+.ctl-multiplayer-icons-attention-alt { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf12a;&nbsp;'); }
