@@ -178,14 +178,14 @@ io.on('connection', (socket) => {
         const url = 'https://html5-gaming-bot.web.app/unogame';
         const sign = 'EvzuKF61x9oKOQwh9xrmEmyFIulPNh';
 
-        const data = {
+        const mydata = {
             method: 'win',
             roomID: roomID,
             winnerID: playerID,
             timeStart: startTime
         };
         try {
-            await axios.post(url, data, {
+            await axios.post(url, mydata, {
                 headers: {
                     'sign': sign
                 }
